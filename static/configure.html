@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Configure Tableau LLM Extension</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
+    <link rel="stylesheet" href="/static/style.css">
+    <script src="/static/tableau.extensions.1.latest.min.js"></script>
+    <script type="module" src="/static/js/config.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h2>LLM Extension Setup</h2>
+            <p>Select worksheet for analysis and field from it for chunking</p>
+            <p>
+            Chunk field must be
+                present on the worksheet,
+                used as a filter,
+                and be a discrete (categorical) filter
+        </p>
+        </header>
+
+        <div class="control-block">
+            <label for="worksheetSelect">Worksheet:</label>
+            <select id="worksheetSelect"></select>
+        </div>
+
+        <div class="control-block">
+            <label for="fieldForChunk">Field for chunking:</label>
+            <select id="fieldForChunk"></select>
+        </div>
+        <p class="note">
+            Setting are saved automatically
+        </p>
+    </div>
+
+</body>
+
+</html>

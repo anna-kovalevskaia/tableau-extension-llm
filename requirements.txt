@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+python-dotenv
+ollama
+openai
+pandas
+numpy
+scipy
+polars
