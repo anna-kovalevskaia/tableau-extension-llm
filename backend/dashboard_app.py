@@ -1,4 +1,5 @@
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from uuid import uuid4
 
 from fastapi import FastAPI, Request, HTTPException
@@ -8,7 +9,7 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 from backend.ops.frontend_payload_parse import parse_frontend_payload
-from backend.ops.history import add_message
+from backend.ops.history import add_message, clean_message_history
 from backend.utilities.logging_config import setup_logging
 
 load_dotenv()
@@ -32,12 +33,13 @@ def static_index():
 
 @app.post("/api/llm-query")
 async def llm_query(request: Request):
+    clean_message_history()
     user_id = str(uuid4())
     payload = await  request.json()
     parsed_payload = parse_frontend_payload(payload)
-    add_message(user_id=user_id, role="planner_input", content=parsed_payload["planner_input"])
-    add_message(user_id=user_id, role="chunking_input", content=parsed_payload["chunking_input"])
-    add_message(user_id=user_id, role="interpreter_input", content=parsed_payload["interpreter_input"])
+    message_dt_utc = datetime.now(tz=ZoneInfo("UTC"))
+    for role in ("planner_input", "chunking_input", "interpreter_input"):
+        add_message(user_id, role, parsed_payload[role], message_dt_utc)
 
     return {"user_id": user_id}
 
