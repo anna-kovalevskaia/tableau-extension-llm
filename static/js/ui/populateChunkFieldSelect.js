@@ -6,8 +6,6 @@ export async function populateChunkFieldSelect(worksheetName, fieldForChunk) {
     const schema = await getSchema(worksheet);
 
     const filters = await getFilters(worksheet);
-    const filterFieldNames = filters.map(f => f.fieldName);
-    const filterType = filters.map(f => f.type);
     // leave only allowed filter fields
     const allowedFields = schema.filter(col =>
         (col.dataType === "int" || col.dataType === "date") &&
