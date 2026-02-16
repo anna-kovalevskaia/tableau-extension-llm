@@ -28,15 +28,19 @@ export async function initializeWorksheetSelection() {
             worksheetSelect.value = first_worksheet;
             tableau.extensions.settings.set("chosenWorksheet",first_worksheet);
             await populateChunkFieldSelect(first_worksheet, fieldForChunk)
+            const value = fieldForChunk.value;
+            tableau.extensions.settings.set("chunkField",value);
+            await tableau.extensions.settings.saveAsync();
         }
     }
     // handle worksheet selection for llm
     worksheetSelect.addEventListener("change", async () => {
         const chosenWorksheet = worksheetSelect.value;
         tableau.extensions.settings.set("chosenWorksheet",chosenWorksheet);
-        await tableau.extensions.settings.saveAsync();
-
         await populateChunkFieldSelect(chosenWorksheet, fieldForChunk)
+        const value = fieldForChunk.value;
+        tableau.extensions.settings.set("chunkField",value);
+        await tableau.extensions.settings.saveAsync();
     });
     // handle chunk-field selection
     fieldForChunk.addEventListener("change", async () => {
