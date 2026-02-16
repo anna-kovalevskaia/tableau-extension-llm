@@ -24,5 +24,5 @@ export async function sendQueryWithSchema(question) {
     }
     const json = await response.json();
     console.log("parsed json:", json);
-    return json;
+    return json; // {"user_id": user_id} from backend
 }
