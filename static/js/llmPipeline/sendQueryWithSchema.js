@@ -11,7 +11,7 @@ export async function sendQueryWithSchema(question) {
         worksheet: context
     };
 
-    const response = await fetch("/api/llm-query", {
+    const response = await fetch("/api/worksheet_structure", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload)

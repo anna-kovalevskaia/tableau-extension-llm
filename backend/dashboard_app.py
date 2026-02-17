@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from uuid import uuid4
@@ -9,8 +10,11 @@ from pydantic import BaseModel
 from dotenv import load_dotenv
 
 from backend.ops.frontend_payload_parse import parse_frontend_payload
-from backend.ops.history import add_message, clean_message_history
+from backend.ops.history import add_message, get_history
 from backend.utilities.logging_config import setup_logging
+from backend.utilities.prompt import GAMEDEV_PLANNER_SYSTEM_PROMPT
+from backend.adapter import ChatAI
+
 
 load_dotenv()
 
@@ -18,7 +22,7 @@ logger = setup_logging("app.log")
 
 app = FastAPI(
     title="Tableau LLM Chat",
-    description="Simple LLM chat interface for Tableau data"
+    description="Simple LLM chat interface for Tableau dashboard data"
 )
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -31,9 +35,8 @@ def static_config():
 def static_index():
     return FileResponse('static/index.html')
 
-@app.post("/api/llm-query")
-async def llm_query(request: Request):
-    clean_message_history()
+@app.post("/api/worksheet_structure")
+async def parse_structure(request: Request):
     user_id = str(uuid4())
     payload = await  request.json()
     parsed_payload = parse_frontend_payload(payload)
@@ -42,6 +45,11 @@ async def llm_query(request: Request):
         add_message(user_id, role, parsed_payload[role], message_dt_utc)
 
     return {"user_id": user_id}
+
+def send_schema_to_llm(user_id):
+    query_schema = next(message for message in get_history(user_id) if message["role"]=="planner_input")
+    llm = ChatAI(GAMEDEV_PLANNER_SYSTEM_PROMPT)
+    return llm.ask_ollama(json.dumps(query_schema, ensure_ascii=False))
 
 
 # Run the app

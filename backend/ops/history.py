@@ -7,7 +7,7 @@ MAX_HISTORY = 20 # max messages in history
 TTL_SECONDS = 600
 
 def add_message(user_id, role, content, message_dt):
-    history_key = f"history: {user_id}"
+    history_key = f"history:{user_id}"
 
     chat_history = json.dumps({
         "role": role,
@@ -20,7 +20,7 @@ def add_message(user_id, role, content, message_dt):
 
 
 def get_history(user_id):
-    history_key = f"history: {user_id}"
+    history_key = f"history:{user_id}"
     user_message_history = r.lrange(history_key, 0, -1)
     return [json.loads(m) for m in user_message_history]
 
