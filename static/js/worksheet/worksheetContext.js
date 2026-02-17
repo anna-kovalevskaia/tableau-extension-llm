@@ -15,9 +15,12 @@ export async function getFilters(worksheet) {
     const filters = await worksheet.getFiltersAsync();
 
     return filters.map(f => ({
+        const values_list = extractFilterValues(f)
         fieldName: f.fieldName,
         type: f.filterType,
-        values: extractFilterValues(f)
+        values: values_list.length <=20
+                ? values_list
+                : ["More then 20 values"]
     }));
 }
 

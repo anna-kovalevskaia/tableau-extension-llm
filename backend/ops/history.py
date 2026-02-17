@@ -1,39 +1,26 @@
-from typing import List, Dict
-from datetime import datetime
-from zoneinfo import ZoneInfo
-from typing import Any
+import  redis
+import json
 
-_chat_history: Dict[str, List[Dict[str, Any]]] = {}
+r = redis.Redis(host="localhost", port=6379, db=0)
 
 MAX_HISTORY = 20 # max messages in history
 TTL_SECONDS = 600
 
 def add_message(user_id, role, content, message_dt):
-    if user_id not in _chat_history:
-        _chat_history[user_id]=[]
+    history_key = f"history: {user_id}"
 
-    _chat_history[user_id].append({
+    chat_history = json.dumps({
         "role": role,
         "content": content,
         "message_time": message_dt
     })
-
-    if len(_chat_history[user_id]) > MAX_HISTORY:
-        _chat_history[user_id] = _chat_history[user_id][-MAX_HISTORY:]
+    r.lpush(history_key, chat_history)
+    r.ltrim(history_key, 0, MAX_HISTORY-1)
+    r.expire(history_key, TTL_SECONDS)
 
 
 def get_history(user_id):
-    return _chat_history.get(user_id,[])
-
-
-def clean_message_history():
-    now_utc = datetime.now(tz=ZoneInfo("UTC"))
-    expired_users = [
-        user
-        for user, message in _chat_history.items()
-        if int((now_utc - message[-1]["message_time"]).total_seconds()) > TTL_SECONDS
-    ]
-
-    for expired_user in expired_users:
-            _chat_history.pop(expired_user, None)
+    history_key = f"history: {user_id}"
+    user_message_history = r.lrange(history_key, 0, -1)
+    return [json.loads(m) for m in user_message_history]
 
