@@ -1,10 +1,13 @@
 import ollama
 from openai import OpenAI
+from backend.utilities.logging_config import setup_logging
+logger = setup_logging(filename='adapter.log')
 
+class ErrorLLM(Exception):
+    pass
 
 class ChatAI:
-    def __init__(self, system_prompt, temperature=0):
-        self.system_prompt = system_prompt
+    def __init__(self, temperature=0):
         self.temperature = temperature
         self._openai_client = None
 
@@ -14,11 +17,8 @@ class ChatAI:
             self._openai_client = OpenAI()
         return self._openai_client
 
-    def ask_ollama(self, user_content, model="llama3:70b"):
-        message = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": user_content}
-        ]
+    def ask_ollama(self, message, model="llama3:70b"):
+
         try:
             response = ollama.chat(
                 model=model,
@@ -28,13 +28,11 @@ class ChatAI:
 
             return response["message"]["content"]
         except Exception as e:
-            raise RuntimeError(f"OllamaAI error: {e}")
+            logger.error(f"OllamaAI error: {e}")
+            raise ErrorLLM(f"OllamaAI error: {e}")
 
-    def ask_openai(self, user_content, model="gpt-4.1"):
-        message = [
-            {"role": "system", "content": self.system_prompt},
-            {"role": "user", "content": user_content}
-        ]
+    def ask_openai(self, message, model="gpt-4.1"):
+
         try:
             response = self.openai_client.chat.completions.create(
                 model=model,
@@ -44,5 +42,6 @@ class ChatAI:
 
             return response.choices[0].message.content
         except Exception as e:
-            raise RuntimeError(f"OpenAI error: {e}")
+            logger.error(f"OpenAI error: {e}")
+            raise ErrorLLM(f"OpenAI error: {e}")
 

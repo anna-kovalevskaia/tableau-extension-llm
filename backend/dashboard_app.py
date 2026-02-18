@@ -3,14 +3,15 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from uuid import uuid4
 
-from fastapi import FastAPI, Request, HTTPException
+from fastapi import FastAPI, Request, BackgroundTasks, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
+import backend.ops.history as history
 from backend.ops.frontend_payload_parse import parse_frontend_payload
-from backend.ops.history import add_message, get_history
+from backend.ops.llm_orchestrator import LLMPlanner
 from backend.utilities.logging_config import setup_logging
 from backend.utilities.prompt import GAMEDEV_PLANNER_SYSTEM_PROMPT
 from backend.adapter import ChatAI
@@ -42,14 +43,11 @@ async def parse_structure(request: Request):
     parsed_payload = parse_frontend_payload(payload)
     message_dt_utc = datetime.now(tz=ZoneInfo("UTC"))
     for role in ("planner_input", "chunking_input", "interpreter_input"):
-        add_message(user_id, role, parsed_payload[role], message_dt_utc)
+        history.add_message(user_id, role, parsed_payload[role], message_dt_utc)
+    llm = ChatAI()
+    llm_planner = LLMPlanner(GAMEDEV_PLANNER_SYSTEM_PROMPT, user_id, history, llm.ask_ollama)
 
     return {"user_id": user_id}
-
-def send_schema_to_llm(user_id):
-    query_schema = next(message for message in get_history(user_id) if message["role"]=="planner_input")
-    llm = ChatAI(GAMEDEV_PLANNER_SYSTEM_PROMPT)
-    return llm.ask_ollama(json.dumps(query_schema, ensure_ascii=False))
 
 
 # Run the app

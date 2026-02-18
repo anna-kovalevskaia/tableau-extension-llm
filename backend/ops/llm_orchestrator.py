@@ -15,35 +15,51 @@ class LLMResponseModel(BaseModel):
     code: str
 
 class LLMPlanner:
-    def __init__(self,system_prompt_planner,user_id,question,history,llm):
+    def __init__(self,system_prompt_planner,user_id, history,llm):
         self.system_prompt_planner = system_prompt_planner
         self.user_id = user_id
-        self.question = question
         self.history = history
         self.llm = llm
 
 
-    def get_llm_plan(self, sheet_name, fields):
+    def _get_last_role_content(self, role, msg_history):
+        try:
+            return next(
+                    message["content"]
+                    for message in reversed(msg_history)
+                    if message["role"] == role
+                )
+        except StopIteration:
+            logger.error(f"{self.user_id} doesn't have history for required role : {role}")
+            raise LLMPlannerError(f"{self.user_id} doesn't have history for required role : {role}")
+
+
+    def get_llm_plan(self, datetime):
         """get_llm_plan
-        Sends question + available_fields to LLM, updates history,
-        and returns raw JSON response from the model.
+        Sends question + available_fields to LLM and returns raw JSON response from the model.
+        updates history
         """
+        msg_history = self.history.get_history(self.user_id)
+        user_history = [
+            {"role": msg["role"], "content": msg["content"]}
+            for msg in msg_history
+            if msg["role"] not in ("planner_input", "chunking_input", "interpreter_input")
+        ]
 
         messages = [
             {"role": "system", "content": self.system_prompt_planner},
-            *self.history.get_history(self.user_id),
+            *user_history,
             {
                 "role": "user",
-                "content": json.dumps({
-                    "question": self.question,
-                    "sheets": {'sheet': sheet_name, "available_fields": fields},
-                }, ensure_ascii=False)
+                "content": json.dumps(
+                    self._get_last_role_content("planner_input", msg_history),
+                    ensure_ascii=False
+                )
             }
         ]
 
-        self.history.add_message(self.user_id, "user",self.question)
-        raw_response = self.llm.ask(messages)
-        self.history.add_message(self.user_id, "assistant", raw_response)
+        raw_response = self.llm(messages)
+        self.history.add_message(self.user_id, "assistant", raw_response, datetime)
 
         return raw_response
 
