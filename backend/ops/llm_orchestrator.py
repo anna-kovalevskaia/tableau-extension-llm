@@ -1,6 +1,5 @@
 import json
-from typing import List
-from pydantic import BaseModel
+from backend.models import LLMResponseModel
 from backend.utilities.logging_config import setup_logging
 
 logger = setup_logging(filename='llm_planner_error.log')
@@ -8,11 +7,6 @@ required_keys = ["required_fields", "code"]
 
 class LLMPlannerError(Exception):
     pass
-
-class LLMResponseModel(BaseModel):
-
-    required_fields: List[str]
-    code: str
 
 class LLMPlanner:
     def __init__(self,system_prompt_planner,user_id, history,llm):

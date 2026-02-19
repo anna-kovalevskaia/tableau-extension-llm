@@ -1,20 +1,19 @@
-import json
 from datetime import datetime
 from zoneinfo import ZoneInfo
 from uuid import uuid4
 
-from fastapi import FastAPI, Request, BackgroundTasks, HTTPException
+from fastapi import FastAPI, BackgroundTasks, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 
-import backend.ops.history as history
+import backend.history as history
 from backend.models import Payload
 from backend.ops.frontend_payload_parse import parse_frontend_payload
 from backend.ops.llm_orchestrator import LLMPlanner
 from backend.utilities.logging_config import setup_logging
 from backend.utilities.prompt import GAMEDEV_PLANNER_SYSTEM_PROMPT
-from backend.adapter import ChatAI
+from backend.llm_adapter import ChatAI
 
 
 load_dotenv()
