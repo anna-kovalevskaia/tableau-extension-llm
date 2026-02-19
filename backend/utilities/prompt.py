@@ -102,14 +102,12 @@ PLANNER = """
 If filter_field = "index":
 {
   "required_fields": List[str],
-  "filter_field": "index",
   "code": str
 }
 
 If filter_field = "date":
 {
   "required_fields": List[str],
-  "filter_field": "date",
   "code": str
 }
 
