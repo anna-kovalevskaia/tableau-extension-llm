@@ -9,15 +9,16 @@ def parse_frontend_payload(payload: Payload):
     try:
         worksheet = payload.worksheet
         chunk_field_name = worksheet.chunkField
+        ws_schema = [row.model_dump() for row in worksheet.schema]
         chunk_field_context = [
-            row.model_dump() for row in worksheet.schema if chunk_field_name and row.name==chunk_field_name
+            row for row in ws_schema if chunk_field_name and row["name"]==chunk_field_name
         ]
         chunk_field_type = chunk_field_context[0]["type"] if chunk_field_context else None
 
         return {
             "planner_input": {
                 "question": payload.question,
-                "schema": worksheet.schema
+                "schema": ws_schema,
             },
             "chunking_input": {
                 "chunkFieldName": chunk_field_name,
@@ -25,7 +26,7 @@ def parse_frontend_payload(payload: Payload):
                 "worksheetName": worksheet.worksheetName
             },
             "interpreter_input": {
-                "filters": worksheet.filters
+                "filters": [f.model_dump() for f in worksheet.filters] if worksheet.filters else None
             }
         }
     except Exception as e:

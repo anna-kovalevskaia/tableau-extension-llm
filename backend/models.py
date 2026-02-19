@@ -1,16 +1,21 @@
 from pydantic import BaseModel
-from typing import List, Optional, Any
+from typing import Union, List, Dict, Optional, Any
 
 class SchemaRow(BaseModel):
     name: str
     type: str
     isDiscrete: bool
 
+class FilterRow(BaseModel):
+    name: str
+    type: str
+    values: Union[List[str], Dict[str, Any], None]
+
 class Worksheet(BaseModel):
     worksheetName: str
-    chunkField: Optional[str]= None
+    chunkField: Optional[str] = None
     schema: List[SchemaRow]
-    filters: Any
+    filters: Optional[List[FilterRow]] = None
 
 class Payload(BaseModel):
     question: str

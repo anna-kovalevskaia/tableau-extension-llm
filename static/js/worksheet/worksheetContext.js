@@ -15,12 +15,9 @@ export async function getFilters(worksheet) {
     const filters = await worksheet.getFiltersAsync();
 
     return filters.map(f => ({
-        const values_list = extractFilterValues(f)
         fieldName: f.fieldName,
         type: f.filterType,
-        values: values_list.length <=20
-                ? values_list
-                : ["More then 20 values"]
+        values: checkFiltersLength(extractFilterValues(f))
     }));
 }
 
@@ -35,6 +32,13 @@ function extractFilterValues(filter) {
         };
     }
     return null;
+}
+
+function checkFiltersLength(values, max_len = 20) {
+    if (!Array.isArray(values)) return values;
+    return values.length > max_len
+        ? ["More than 20 values"]
+        : values;
 }
 
 function normalizeSchema(columns) {
