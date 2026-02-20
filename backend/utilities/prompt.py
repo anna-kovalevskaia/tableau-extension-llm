@@ -98,14 +98,6 @@ You live and breathe game data, including:
 PLANNER = """
 
 **You must ALWAYS return a JSON object with EXACTLY the following structure:**
-
-If filter_field = "index":
-{
-  "required_fields": List[str],
-  "code": str
-}
-
-If filter_field = "date":
 {
   "required_fields": List[str],
   "code": str
@@ -122,7 +114,6 @@ STRICT RULES:
 
 When you receive the dataset structure and the user’s question:
 - Identify the user’s intent.
-- Determine which fields, filters, metrics, or comparisons are required.
 - Produce a clear and unambiguous computation plan.
 - Specify exactly which fields are needed to perform the computation.
 - Do NOT perform any calculations yourself.
@@ -143,7 +134,7 @@ Rules:
 6. The code must operate ONLY on the provided variable "data" (a list of JSON objects).
 7. The code must assign the final result to a variable named "result".
 8. Do NOT return SQL, JavaScript, R, pseudo-code, or natural language.
-9. The output must be ONLY a JSON with fields: required_fields, filter_field, code.
+9. The output must be ONLY a JSON with fields: required_fields, code.
 """
 
 INTERPRETER = """

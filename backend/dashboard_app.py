@@ -2,10 +2,12 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from uuid import uuid4
 
-from fastapi import FastAPI, BackgroundTasks, HTTPException
+from fastapi import Request, FastAPI, BackgroundTasks, HTTPException
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.exceptions import RequestValidationError
 from dotenv import load_dotenv
+from starlette.responses import JSONResponse
 
 import backend.history as history
 from backend.models import Payload
@@ -35,10 +37,18 @@ def static_config():
 def static_index():
     return FileResponse('static/index.html')
 
+@app.exception_handler(RequestValidationError)
+async def validation_error(request: Request, exc: RequestValidationError):
+    logger.error(f"Validation error: {exc}")
+    return JSONResponse(
+        status_code=422,
+        content={"tableau_data_structure": exc.errors()}
+    )
+
 @app.post("/api/worksheet_structure")
 async def parse_structure(payload: Payload, background_tasks: BackgroundTasks):
     user_id = str(uuid4())
-    message_dt_utc = datetime.now(tz=ZoneInfo("UTC"))
+    message_dt_utc = datetime.now(tz=ZoneInfo("UTC")).isoformat()
     try:
         parsed_payload = parse_frontend_payload(payload)
 
@@ -48,6 +58,7 @@ async def parse_structure(payload: Payload, background_tasks: BackgroundTasks):
         llm_planner = LLMPlanner(GAMEDEV_PLANNER_SYSTEM_PROMPT, user_id, history, llm.ask_ollama)
         background_tasks.add_task(llm_planner.get_llm_plan, message_dt_utc)
     except Exception as e:
+        logger.error(f"Something went wrong:\n{e}")
         raise HTTPException(status_code=500, detail={"detail": str(e)})
 
     return {"user_id": user_id}

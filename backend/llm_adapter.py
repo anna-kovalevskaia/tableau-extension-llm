@@ -1,7 +1,8 @@
+import logging
 import ollama
 from openai import OpenAI
-from backend.utilities.logging_config import setup_logging
-logger = setup_logging(filename='adapter.log')
+
+logger = logging.getLogger(__name__)
 
 class ErrorLLM(Exception):
     pass

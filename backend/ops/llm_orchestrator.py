@@ -1,8 +1,6 @@
 import json
 from backend.models import LLMResponseModel
-from backend.utilities.logging_config import setup_logging
 
-logger = setup_logging(filename='llm_planner_error.log')
 required_keys = ["required_fields", "code"]
 
 class LLMPlannerError(Exception):
@@ -24,7 +22,6 @@ class LLMPlanner:
                     if message["role"] == role
                 )
         except StopIteration:
-            logger.error(f"{self.user_id} doesn't have history for required role : {role}")
             raise LLMPlannerError(f"{self.user_id} doesn't have history for required role : {role}")
 
 
@@ -68,13 +65,11 @@ class LLMPlanner:
         try:
             parsed = json.loads(raw_response)
         except json.JSONDecodeError:
-            logger.error(f"JSON parsing error:\n{raw_response}")
             raise LLMPlannerError(f"LLM returned invalid JSON:\n{raw_response}")
 
         try:
             return LLMResponseModel(**parsed)
         except Exception as e:
-            logger.error(f"Data structure error: {e}\n {parsed}")
             raise LLMPlannerError(f"LLM responded invalid structure or filter-filed: {e}")
 
 

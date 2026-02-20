@@ -1,6 +1,4 @@
-from backend.utilities.logging_config import setup_logging
 from backend.models import Payload
-logger = setup_logging(filename='frontend_payload_parse.log')
 
 class JSPayloadError(Exception):
     pass
@@ -30,5 +28,4 @@ def parse_frontend_payload(payload: Payload):
             }
         }
     except Exception as e:
-        logger.error(f"Json is invalid {payload.model_dump()}:\n{e}")
         raise JSPayloadError(f"Json is invalid:\n{e}")

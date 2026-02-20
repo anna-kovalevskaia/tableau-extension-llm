@@ -1,7 +1,5 @@
 import ast
-from backend.utilities.logging_config import setup_logging
 
-logger = setup_logging(filename='code_validation.py')
 
 ALLOWED_MODULES = {
     "math",
@@ -71,29 +69,24 @@ class SafeCodeValidator(ast.NodeVisitor):
     def visit(self, node):
         if isinstance(node, FORBIDDEN_NODES):
             error_message = f"Forbidden node type: {type(node).__name__}"
-            logger.error(error_message)
             raise ValueError(error_message)
         return super().visit(node)
 
     def visit_Attribute(self, node: ast.Attribute):
         if node.attr.startswith("__"):
             error_message = f"Dunder attribute forbidden: {node.attr}"
-            logger.error(error_message)
             raise ValueError(error_message)
         if node.attr in FORBIDDEN_CALLS:
             error_message = f"Forbidden attribute: {node.attr}"
-            logger.error(error_message)
             raise ValueError(error_message)
         self.generic_visit(node)
 
     def visit_Name(self, node: ast.Name):
         if node.id.startswith("__"):
             error_message = f"Dunder name forbidden: {node.id}"
-            logger.error(error_message)
             raise ValueError(error_message)
         if node.id in FORBIDDEN_CALLS:
             error_message = f"Forbidden name: {node.id}"
-            logger.error(error_message)
             raise ValueError(error_message)
         self.generic_visit(node)
 
@@ -102,14 +95,12 @@ class SafeCodeValidator(ast.NodeVisitor):
             func_name = node.func.id
             if func_name in FORBIDDEN_CALLS:
                 error_message = f"Forbidden call: {func_name}"
-                logger.error(error_message)
                 raise ValueError(error_message)
 
         if isinstance(node.func, ast.Attribute):
             attr_name = node.func.attr
             if attr_name in FORBIDDEN_CALLS:
                 error_message =f"Forbidden attribute call: {attr_name}"
-                logger.error(error_message)
                 raise ValueError(error_message)
 
         self.generic_visit(node)
@@ -121,7 +112,6 @@ def validate_code(code: str) -> None:
         tree = ast.parse(code, mode="exec")
     except SyntaxError as e:
         error_message = f"Syntax error: {e}"
-        logger.error(error_message)
         raise ValueError(error_message)
 
     validator = SafeCodeValidator()

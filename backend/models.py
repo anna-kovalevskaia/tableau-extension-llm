@@ -7,7 +7,7 @@ class SchemaRow(BaseModel):
     isDiscrete: bool
 
 class FilterRow(BaseModel):
-    name: str
+    filedName: str
     type: str
     values: Union[List[str], Dict[str, Any], None]
 
