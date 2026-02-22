@@ -46,6 +46,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
        // step 1
         const parsed = await sendQueryWithSchema(question);
+        addMessage(JSON.stringify(parsed), "bot");
        // step 2 chunking data
        // step 3 llm response
 

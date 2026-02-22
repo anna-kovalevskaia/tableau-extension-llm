@@ -131,10 +131,11 @@ Rules:
 3. The code must NOT use external libraries except: """+ ALLOWED_MODULES_STR +""".
 4. The code must NOT read or write files.
 5. The code must NOT use: open(), eval(), exec(), compile(), subprocess, socket, requests, pickle, os, sys, pathlib, shutil.
-6. The code must operate ONLY on the provided variable "data" (a list of JSON objects).
-7. The code must assign the final result to a variable named "result".
-8. Do NOT return SQL, JavaScript, R, pseudo-code, or natural language.
-9. The output must be ONLY a JSON with fields: required_fields, code.
+6. The code must NOT use `def`, `lambda`, classes, or any constructs that create callable objects. But you ARE allowed to use built-in Python functions.
+7. The code must operate ONLY on the provided variable "data" (a list of JSON objects).
+8. The code must assign the final result to a variable named "result".
+9. Do NOT return SQL, JavaScript, R, pseudo-code, or natural language.
+10. The output must be ONLY a JSON with fields: required_fields, code.
 """
 
 INTERPRETER = """
