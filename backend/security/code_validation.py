@@ -10,7 +10,6 @@ ALLOWED_MODULES = {
     "json",
     "re",
     "datetime",
-    "operator",
     "pandas",
     "numpy",
     "scipy",

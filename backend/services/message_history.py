@@ -1,10 +1,13 @@
-import  redis
+import os
+import redis
 import json
+from dotenv import load_dotenv
+load_dotenv()
 
 class HistoryError(Exception):
     pass
 
-r = redis.Redis(host="localhost", port=6379, db=0)
+r = redis.Redis(host=os.environ['SERVER'], port=6379, db=0)
 
 MAX_HISTORY = 20 # max messages in history
 TTL_SECONDS = 600

@@ -1,9 +1,11 @@
 import os
 import logging
 import ollama
+from dotenv import load_dotenv
 from openai import OpenAI
 from google import genai
 
+load_dotenv()
 logger = logging.getLogger(__name__)
 
 class ErrorLLM(Exception):
@@ -39,13 +41,14 @@ class ChatAI:
             logger.error(f"OllamaAI error: {e}")
             raise ErrorLLM(f"OllamaAI error: {e}")
 
-    def ask_openai(self, message, model="google/gemma-3-27b-it:free"):
+    def ask_openai(self, message, model="google/gemini-3.1-pro-preview"):
 
         try:
             response = self.openai_client.chat.completions.create(
                 model=model,
                 messages=message,
-                temperature=self.temperature
+                temperature=self.temperature,
+                max_tokens = 8000
             )
 
             return response.choices[0].message.content
@@ -54,13 +57,14 @@ class ChatAI:
             raise ErrorLLM(f"OpenAI error: {e}")
 
 
-    def ask_gemini(self, message, model="gemini-2.5-flash"):
+    def ask_gemini(self, message, model="gemini-3-flash-preview"):
+        full_prompt = message[0]["content"] + "\n\n" + message[1]["content"]
         client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
 
         try:
             response = client.models.generate_content(
                 model=model,
-                contents=message
+                contents=full_prompt
             )
 
             return response.text

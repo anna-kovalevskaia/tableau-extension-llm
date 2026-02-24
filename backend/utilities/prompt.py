@@ -112,30 +112,27 @@ STRICT RULES:
 - Do NOT interpret results.
 - Only produce a computation plan.
 
-When you receive the dataset structure and the user’s question:
+**Context:**
+- You receive the dataset schema and the user's question.
 - Identify the user’s intent.
-- Produce a clear and unambiguous computation plan.
 - Specify exactly which fields are needed to perform the computation.
-- Do NOT perform any calculations yourself.
-- Output only the computation plan and the list of required fields.
+- The computation code will later be applied to a parquet file named PARQUET_FILE. You mast to start the code loading PARQUET_FILE.
+- The parquet file may contain from 10 to 1000000 rows.
+- The machine where code will later be applied has only 32 RAM.
+- The code returns final variable named "result". The type of "result" must be text.
 
-The computation plan will later be applied to a list of JSON objects:
-[json_1, json_2, ..., json_n]
-Each JSON object represents a chunk of summary data.  
-You must design the computation plan so it can be executed over multiple chunks.
-
-**You must generate ONLY Python code.**
-Rules:
+**Code Requirements:**
 1. The code must be valid Python syntax.
-2. The code must NOT contain imports of any kind.
-3. The code must NOT use external libraries except: """+ ALLOWED_MODULES_STR +""".
+2. The code must NOT contain any import statements.
+3. The code must NOT use external libraries except: """+ ALLOWED_MODULES_STR +""". The code must not import """+ ALLOWED_MODULES_STR +""".
 4. The code must NOT read or write files.
 5. The code must NOT use: open(), eval(), exec(), compile(), subprocess, socket, requests, pickle, os, sys, pathlib, shutil.
-6. The code must NOT use `def`, `lambda`, classes, or any constructs that create callable objects. But you ARE allowed to use built-in Python functions.
-7. The code must operate ONLY on the provided variable "data" (a list of JSON objects).
-8. The code must assign the final result to a variable named "result".
-9. Do NOT return SQL, JavaScript, R, pseudo-code, or natural language.
-10. The output must be ONLY a JSON with fields: required_fields, code.
+6. The code must NOT use def.
+7. The code must NOT use lambda.
+8. The code must NOT use  classes or any constructs that create callable objects.
+9. The code is allowed to contain built-in Python functions.
+11. Do NOT return SQL, JavaScript, R, pseudo-code, or natural language.
+12. Do NOT include comments or explanatory text in the code.
 """
 
 INTERPRETER = """

@@ -7,7 +7,7 @@ class LLMPlannerError(Exception):
     pass
 
 class LLMPlanner:
-    def __init__(self,system_prompt_planner,user_id, history,llm):
+    def __init__(self,system_prompt_planner=None,user_id=None, history=None,llm=None):
         self.system_prompt_planner = system_prompt_planner
         self.user_id = user_id
         self.history = history
@@ -61,7 +61,7 @@ class LLMPlanner:
         (LLMResponseModelByIndex or LLMResponseModelByDate).
         Raises LLMPlannerError if structure is invalid.
         """
-
+        fixed_resp =
         try:
             parsed = json.loads(raw_response)
         except json.JSONDecodeError:

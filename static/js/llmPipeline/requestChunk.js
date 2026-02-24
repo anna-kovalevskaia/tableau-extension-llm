@@ -21,15 +21,11 @@ export async function requestChunk({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-            chunkValues,
-            partial,
             rows
         })
     });
 
     return {
-        chunkValues,
-        rows: rows.length,
-        partial
+        rows: rows.length
     };
 }
