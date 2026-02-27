@@ -1,7 +1,7 @@
 import { getWorksheet } from "./worksheet/worksheetContext.js";
 import { addMessage, handleEnter } from "./ui/chatUtils.js";
 import { sendQueryWithSchema } from "./llmPipeline/sendQueryWithSchema.js";
-import { requestChunk } from "./llmPipeline/requestChunk.js";
+import { fetchData } from "./llmPipeline/fetchData.js";
 import { getFinalAnswer } from "./llmPipeline/getFinalAnswer.js";
 
 let input;
@@ -41,13 +41,14 @@ document.addEventListener("DOMContentLoaded", () => {
     input.value = "";
 
     btn.disabled = true;
-    btn.textContent = "Thinking...";
+    btn.textContent = "Retrieving data structure and analyzing the query…";
 
     try {
        // step 1
-        const parsed = await sendQueryWithSchema(question);
-        addMessage(JSON.stringify(parsed), "bot");
+       const user_id = await sendQueryWithSchema(question);
        // step 2 chunking data
+       btn.textContent = "Loading all required data...";
+       await fetchData(user_id);
        // step 3 llm response
 
     } catch (error) {

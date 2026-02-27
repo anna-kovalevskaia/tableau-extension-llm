@@ -7,51 +7,30 @@ class LLMPlannerError(Exception):
     pass
 
 class LLMPlanner:
-    def __init__(self,system_prompt_planner=None,user_id=None, history=None,llm=None):
+    def __init__(self,system_prompt_planner=None,user_id=None, llm=None, history=None):
         self.system_prompt_planner = system_prompt_planner
         self.user_id = user_id
-        self.history = history
         self.llm = llm
+        self.history = history
 
 
-    def _get_last_role_content(self, role, msg_history):
-        try:
-            return next(
-                    message["content"]
-                    for message in reversed(msg_history)
-                    if message["role"] == role
-                )
-        except StopIteration:
-            raise LLMPlannerError(f"{self.user_id} doesn't have history for required role : {role}")
-
-
-    def get_llm_plan(self, datetime):
+    def get_llm_plan(self, plan_content):
         """get_llm_plan
         Sends question + available_fields to LLM and returns raw JSON response from the model.
         updates history
         """
         msg_history = self.history.get_history(self.user_id)
-        user_history = [
-            {"role": msg["role"], "content": msg["content"]}
-            for msg in msg_history
-            if msg["role"] not in ("planner_input", "chunking_input", "interpreter_input")
-        ]
 
         messages = [
             {"role": "system", "content": self.system_prompt_planner},
-            *user_history,
+            *msg_history,
             {
                 "role": "user",
-                "content": json.dumps(
-                    self._get_last_role_content("planner_input", msg_history),
-                    ensure_ascii=False
-                )
+                "content": json.dumps(plan_content, ensure_ascii=False)
             }
         ]
 
         raw_response = self.llm(messages)
-        self.history.add_message(self.user_id, "assistant", raw_response, datetime)
-
         return raw_response
 
 
@@ -61,7 +40,6 @@ class LLMPlanner:
         (LLMResponseModelByIndex or LLMResponseModelByDate).
         Raises LLMPlannerError if structure is invalid.
         """
-        fixed_resp =
         try:
             parsed = json.loads(raw_response)
         except json.JSONDecodeError:

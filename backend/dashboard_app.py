@@ -11,13 +11,13 @@ from dotenv import load_dotenv
 from starlette.responses import JSONResponse
 
 import backend.services.message_history as history
-from backend.models import Payload, ChunkRequestsPayload, ChunkPayload
+from backend.models import Payload, ChunkRequest, ChunkSavePayload
 from backend.ops.frontend_payload_parse import parse_frontend_payload
 from backend.ops.llm_orchestrator import LLMPlanner
 from backend.utilities.logging_config import setup_logging
 from backend.services.chunk_pipeline import ChunkState
-
-from backend.test import test_plan_resp
+from backend.services.pipeline_context import PipelineContext
+from backend.security.code_validation import validate_code
 
 
 load_dotenv()
@@ -69,42 +69,52 @@ def parse_structure(payload: Payload):
         ])
 
         parsed_payload["planner_input"]["schema"] = fixed_schema
-
-        for role in ("planner_input", "chunking_input", "interpreter_input"):
-            history.add_message(user_id, role, parsed_payload[role], message_dt_utc)
+        pipeline_states = PipelineContext(user_id)
+        for state_type in ("planner_input", "chunking_input", "interpreter_input"):
+            pipeline_states.save_pipeline_state(state_type, parsed_payload[state_type])
         # llm = ChatAI()
-        # llm_planner = LLMPlanner(
+        # llm_planner_raw = LLMPlanner(
         #   system_prompt_planner = PLANNER,
         #   user_id = user_id,
-        #   history = history,
-        #   llm = llm.ask_openai
+        #   llm = llm.ask_openai,
+        #   history = history
         # )
-        # get_plan = llm_planner.get_llm_plan(message_dt_utc)
+        # get_plan = llm_planner.get_llm_plan(pipeline_states.get_pipeline_state()["planner_input"])
+        # history.add_message(user_id, "assistant", get_plan, message_dt_utc)
         # llm_planner.parse_llm_plan(get_plan)
-
-        history.add_message(user_id, 'assistant', test_plan_resp, message_dt_utc)
+        with open('backend/tmp_test_llm_resp.txt', 'r', encoding="utf-8") as f:
+            test_resp = f.read()
+        history.add_message(user_id, 'assistant', test_resp, message_dt_utc)
         llm_planner = LLMPlanner()
-        llm_planner.parse_llm_plan(test_plan_resp)
+        parsed_llm_resp = llm_planner.parse_llm_plan(test_resp)
+        validate_code(parsed_llm_resp.code)
+        pipeline_states.save_pipeline_state('required_fields', parsed_llm_resp.required_fields)
+        pipeline_states.save_pipeline_state('code', parsed_llm_resp.code)
+        return {"user_id": user_id}
     except Exception as e:
         logger.error(f"Something went wrong:\n{e}")
         raise HTTPException(status_code=500, detail={"detail": str(e)})
 
 
 @app.post("/api/nextFilter")
-def send_data_request(payload: ChunkRequestsPayload):
+def send_data_request(payload: ChunkRequest):
     user_id = payload.user_id
-    chunk_hist = next(row for row in history.get_history(user_id) if row['role']=="chunking_input")
-    chunk_stat = ChunkState(user_id)
+    pipeline_states = PipelineContext(user_id)
+    chunking_input = pipeline_states.get_pipeline_state()["chunking_input"]
+    required_fields = pipeline_states.get_pipeline_state()["required_fields"]
+    chunk_stat = ChunkState(user_id).update_state_by_chunk()
     request_dict = {
-      "user_id": user_id,
-      "worksheetName": chunk_hist["worksheetName"],
-      "chunkField": chunk_hist["chunkFieldName"]
-    } | chunk_stat.update_state_by_chunk()
+      "worksheetName": chunking_input["worksheetName"],
+      "chunkField": chunking_input["chunkFieldName"],
+      "chunkValues": chunk_stat["chunk_cur_value"],
+      "requiredFields": required_fields,
+      "done": chunk_stat["done"],
+    }
     return request_dict
 
 
 @app.post("/api/saveChunk")
-def save_chunk(payload: ChunkPayload):
+def save_chunk(payload: ChunkSavePayload):
     rows = payload.rows
     chunk_stat = ChunkState(payload.user_id)
     return chunk_stat.update_state_by_rows(len(rows), len(rows) == 0)

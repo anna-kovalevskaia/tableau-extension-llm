@@ -25,10 +25,10 @@ class LLMResponseModel(BaseModel):
     required_fields: List[str]
     code: str
 
-class ChunkRequestsPayload(BaseModel):
+class ChunkRequest(BaseModel):
     user_id: str
 
-class ChunkPayload(BaseModel):
+class ChunkSavePayload(BaseModel):
     user_id: str
     rows: List[Dict[str, Any]]
 

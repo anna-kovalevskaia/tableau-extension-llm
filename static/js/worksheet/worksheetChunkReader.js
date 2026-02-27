@@ -1,10 +1,10 @@
 // validate required parameters before reading chunk data
-export function validateParams({ worksheet, neededFields, limit }) {
+export function validateParams({ worksheet, requiredFields, limit }) {
     if (!worksheet) {
         throw new Error("requestChunk: 'worksheet' is required");
     }
-    if (!Array.isArray(neededFields) || neededFields.length === 0) {
-        throw new Error("requestChunk: 'neededFields' must be a non-empty array");
+    if (!Array.isArray(requiredFields) || requiredFields.length === 0) {
+        throw new Error("requestChunk: 'requiredFields' must be a non-empty array");
     }
     if (typeof limit !== "number" || limit <= 0) {
         throw new Error("requestChunk: 'limit' must be a positive number");
@@ -23,7 +23,7 @@ export async function applyChunkFilter(worksheet, chunkField, chunkValues) {
     );
 }
 //read worksheet rows using Summary Data Reader respecting limit
-export async function readChunkRows(worksheet, neededFields, limit) {
+export async function readChunkRows(worksheet, requiredFields, limit) {
     const reader = await worksheet.getSummaryDataReaderAsync({
         ignoreSelection: true
     });
@@ -45,7 +45,7 @@ export async function readChunkRows(worksheet, neededFields, limit) {
 
         row.forEach((cell, i) => {
             const fieldName = reader.columns[i].fieldName;
-            if (neededFields.includes(fieldName)) {
+            if (requiredFields.includes(fieldName)) {
                 obj[fieldName] = cell.value;
             }
         });

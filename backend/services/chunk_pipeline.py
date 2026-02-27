@@ -5,11 +5,12 @@ class ChunkStateError(Exception):
     pass
 
 class ChunkState:
-    def __init__(self, user_id, ttl_seconds: int = 3600, rows_total: int = 1000000):
+    def __init__(self, user_id, ttl_seconds: int = 3600, rows_total: int = 1000000, max_chunk: int = 330):
         self.r = redis.Redis(host=os.environ['SERVER'], port=6379, db=1)
         self.user_id = user_id
         self.ttl_seconds = ttl_seconds
         self.rows_total = rows_total
+        self.max_chunk = max_chunk
 
     def _key(self, name) -> str:
         return f"chunk:{self.user_id}:{name}"
@@ -32,13 +33,12 @@ class ChunkState:
         For requests a payload for JS.
         """
         chunk_current = self._safe_redis_get(self._key("chunk_cur_value"))
-
         rows_len = self._safe_redis_get(self._key("data_total_rows"))
-        if rows_len >= self.rows_total:
+        if rows_len >= self.rows_total or chunk_current > self.max_chunk:
             return {"done": True}
         next_chunk = chunk_current + 1
         self._safe_redis_set(self._key("chunk_cur_value"), next_chunk)
-        return {"done": False, "chunk_cur_value": int(next_chunk)}
+        return {"done": False, "chunk_cur_value": next_chunk}
 
 
     def update_state_by_rows(self, chunk_rows_len:int, if_last_chunk: bool = False):
@@ -55,3 +55,9 @@ class ChunkState:
         update_rows_len = chunk_rows_len + rows_len
         self._safe_redis_set(self._key("data_total_rows"), update_rows_len)
         return {"done": False, "data_total_rows": update_rows_len}
+
+    def reset(self):
+        self.r.delete(
+            self._key("chunk_cur_value"),
+            self._key("data_total_rows")
+        )
