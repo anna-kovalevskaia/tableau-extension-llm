@@ -9,7 +9,7 @@ class PipelineStateError(Exception):
 
 class PipelineContext:
     def __init__(self, user_id, ttl_seconds: int = 600):
-        self.r = redis.Redis(host=os.environ['SERVER'], port=6379, db=2)
+        self.r = redis.Redis(host=os.environ['SERVER'], port=6379, db=3)
         self.user_id = user_id
         self.ttl_seconds = ttl_seconds
 

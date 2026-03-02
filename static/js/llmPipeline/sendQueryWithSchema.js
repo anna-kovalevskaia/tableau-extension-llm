@@ -1,9 +1,10 @@
-import { getWorksheetContext } from "../worksheet/worksheetContext.js";
+import { getWorksheetContext, measureNamesFilter } from "../worksheet/worksheetContext.js";
 
 export async function sendQueryWithSchema(question) {
     const worksheetName = tableau.extensions.settings.get("chosenWorksheet");
     if (!worksheetName) throw new Error("No worksheet selected");
 
+    await measureNamesFilter(worksheetName)
     const context = await getWorksheetContext(worksheetName);
 
     const payload = {

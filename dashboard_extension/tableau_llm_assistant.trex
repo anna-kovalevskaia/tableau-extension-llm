@@ -5,7 +5,7 @@
     <name resource-id="name"/>
     <description></description>
     <author name="annako" email="" organization="" website="https://examples.com"/>
-    <min-api-version>1.5</min-api-version>
+    <min-api-version>1.10</min-api-version>
     <source-location>
       <url>http://localhost:8888/index.html</url>
     </source-location>

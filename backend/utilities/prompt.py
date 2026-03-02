@@ -116,10 +116,10 @@ STRICT RULES:
 - You receive the dataset schema and the user's question.
 - Identify the user’s intent.
 - Specify exactly which fields are needed to perform the computation.
-- The computation code will later be applied to a parquet file named PARQUET_FILE. You mast to start the code loading PARQUET_FILE.
-- The parquet file may contain from 10 to 1000000 rows.
+- The computation code will later be applied to a polars dataframe file named data_df. You must to start the code using data_df. 
+- The data_df may contain from 10 to 1000000 rows.
 - The machine where code will later be applied has only 32 RAM.
-- The code returns final variable named "result". The type of "result" must be text.
+- The code returns final variable named "result". The type of "result" must be json.
 
 **Code Requirements:**
 1. The code must be valid Python syntax.

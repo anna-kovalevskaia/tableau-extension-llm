@@ -1,11 +1,17 @@
 import os
+import shutil
+
 import redis
+import pandas as pd
 
 class ChunkStateError(Exception):
     pass
 
+class ChunkStorageError(Exception):
+    pass
+
 class ChunkState:
-    def __init__(self, user_id, ttl_seconds: int = 3600, rows_total: int = 1000000, max_chunk: int = 330):
+    def __init__(self, user_id, ttl_seconds: int = 1800, rows_total: int = 1000000, max_chunk: int = 330):
         self.r = redis.Redis(host=os.environ['SERVER'], port=6379, db=1)
         self.user_id = user_id
         self.ttl_seconds = ttl_seconds
@@ -30,12 +36,12 @@ class ChunkState:
 
     def update_state_by_chunk(self):
         """
-        For requests a payload for JS.
+        Requests a payload for JS.
         """
         chunk_current = self._safe_redis_get(self._key("chunk_cur_value"))
         rows_len = self._safe_redis_get(self._key("data_total_rows"))
         if rows_len >= self.rows_total or chunk_current > self.max_chunk:
-            return {"done": True}
+            return {"done": True, "chunk_cur_value": None}
         next_chunk = chunk_current + 1
         self._safe_redis_set(self._key("chunk_cur_value"), next_chunk)
         return {"done": False, "chunk_cur_value": next_chunk}
@@ -43,10 +49,10 @@ class ChunkState:
 
     def update_state_by_rows(self, chunk_rows_len:int, if_last_chunk: bool = False):
         """
-        For returns a request payload for JS.
+        Returns a request payload for JS.
         """
         if if_last_chunk:
-            return {"done": True}
+            return {"done": True, "chunk_cur_value": None}
 
         if chunk_rows_len < 0:
             raise ChunkStateError("chunk_rows_len is less then 0")
@@ -56,8 +62,37 @@ class ChunkState:
         self._safe_redis_set(self._key("data_total_rows"), update_rows_len)
         return {"done": False, "data_total_rows": update_rows_len}
 
-    def reset(self):
+    def update_state_reset(self):
         self.r.delete(
             self._key("chunk_cur_value"),
             self._key("data_total_rows")
         )
+
+
+class ChunkStorage:
+    def __int__(self, user_id: int, date_tm: str, ttl_seconds: int = 1800):
+        self.r = redis.Redis(host=os.environ['SERVER'], port=6379, db=2)
+        self.user_id = user_id
+        self.date_tm = date_tm
+        self.dir_path = f"_temp_{self.user_id}_{self.date_tm}"
+
+
+    def save_tmp_files(self, data, chunk_num: int):
+        """
+        Save data chunk to parquet file
+        """
+        try:
+            os.makedirs(self.dir_path, exist_ok=True)
+
+            filename = f"{self.user_id}_{chunk_num}_{self.date_tm}.parquet"
+            full_path = os.path.join(self.dir_path, filename)
+
+            df = pd.read_json(data)
+            df.to_parquet(full_path, index=False)
+            return self.dir_path
+        except Exception as e:
+            raise ChunkStorageError(f"Failed while writing to temp_file:\n{e}")
+
+    def delete_tmp_files(self):
+        if os.path.exists(self.dir_path):
+            shutil.rmtree(self.dir_path)

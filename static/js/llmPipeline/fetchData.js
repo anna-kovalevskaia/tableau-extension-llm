@@ -1,9 +1,9 @@
 import { validateParams, readChunkRows, applyChunkFilter } from "../worksheet/worksheetChunkReader.js";
-import { getWorksheet } from "../worksheet/worksheetContext.js";
+import { getWorksheet, getFilters } from "../worksheet/worksheetContext.js";
 
 export async function fetchData({
     user_id,
-    limit = 3000
+    limit = 60000
 }) {
     let next = await fetch("/api/nextFilter", {
         method: "POST",
@@ -20,8 +20,19 @@ export async function fetchData({
     const worksheet = getWorksheet(worksheetName);
     validateParams({ worksheet, requiredFields, limit });
 
+    const requiredFieldsName = requiredFields.find(obj => obj.otherRequiredFieldNames)?.otherRequiredFieldNames || [];
+    const measureNames = requiredFields.find(obj => obj.measureNames)?.measureNames || [];
+
+    if (measureNames.length > 0) {
+        await worksheet.applyFilterAsync(
+            "Measure Names",
+            measureNames,
+            tableau.FilterUpdateType.Replace
+        );
+    }
+
     if (!chunkField) {
-        const { rows } = await readChunkRows(worksheet, requiredFields, limit);
+        const { rows } = await readChunkRows(worksheet, requiredFieldsName, measureNames, limit);
         await fetch("/api/saveChunk", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -32,7 +43,7 @@ export async function fetchData({
 
     while (!lastChunk) {
         await applyChunkFilter(worksheet, chunkField, chunkValues);
-        const { rows } = await readChunkRows(worksheet, requiredFields, limit);
+        const { rows } = await readChunkRows(worksheet, requiredFieldsName, measureNames, limit);
 
         const saveResp = await fetch("/api/saveChunk", {
             method: "POST",

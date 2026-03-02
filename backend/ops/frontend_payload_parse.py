@@ -12,11 +12,23 @@ def parse_frontend_payload(payload: Payload):
             row for row in ws_schema if chunk_field_name and row["name"]==chunk_field_name
         ]
         chunk_field_type = chunk_field_context[0]["type"] if chunk_field_context else None
+        filters = [f.model_dump() for f in worksheet.filters if f.fieldName!="Measure Names"] if worksheet.filters else None
+        measure_filters = next(f.values for f in worksheet.filters if f.fieldName=="Measure Names") if worksheet.filters else None
+
+        filtered_schema = [
+            row for row in ws_schema
+            if row["name"] not in ("Measure Values", "Measure Names")
+        ]
+        if measure_filters:
+            filtered_schema.extend([
+                {"name": f_value, "type": "float", "isDiscrete": False}
+                for f_value in measure_filters
+            ])
 
         return {
             "planner_input": {
                 "question": payload.question,
-                "schema": ws_schema,
+                "schema": filtered_schema,
             },
             "chunking_input": {
                 "chunkFieldName": chunk_field_name,
@@ -24,7 +36,10 @@ def parse_frontend_payload(payload: Payload):
                 "worksheetName": worksheet.worksheetName
             },
             "interpreter_input": {
-                "filters": [f.model_dump() for f in worksheet.filters] if worksheet.filters else None
+                "filters": filters
+            },
+            "service_fields": {
+                "Measure Names": measure_filters
             }
         }
     except Exception as e:

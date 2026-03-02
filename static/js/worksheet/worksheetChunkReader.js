@@ -18,42 +18,51 @@ export async function applyChunkFilter(worksheet, chunkField, chunkValues) {
 
     await worksheet.applyFilterAsync(
         chunkField,
-        chunkValues,
-        tableau.FilterUpdateType.REPLACE
+        [chunkValues],
+        tableau.FilterUpdateType.Replace
     );
 }
 //read worksheet rows using Summary Data Reader respecting limit
-export async function readChunkRows(worksheet, requiredFields, limit) {
-    const reader = await worksheet.getSummaryDataReaderAsync({
-        ignoreSelection: true
+export async function readChunkRows(worksheet, requiredFieldsName, measureNames, limit) {
+    const table = await worksheet.getSummaryDataAsync({
+        ignoreSelection: true,
+        maxRows:limit
     });
 
-    const rows = [];
-    let row;
-    let count = 0;
-    let partial = false;
+    const requiredSet = new Set(requiredFieldsName);
+    const rows = [] ;
+    let next = 0;
 
-    while ((row = await reader.readAsync()) !== null) {
-        count++;
-
-        if (count > limit) {
-            partial = true;
-            break;
-        }
-
+    table.data.forEach(row => {
         const obj = {};
+        let measureName = null;
+        let measureValue = null;
 
-        row.forEach((cell, i) => {
-            const fieldName = reader.columns[i].fieldName;
-            if (requiredFields.includes(fieldName)) {
+        row.forEach((cell,i) => {
+            const fieldName = table.columns[i].fieldName;
+            if (fieldName === "Measure Names") {
+                measureName = cell.formattedValue;
+            } else
+            if (fieldName === "Measure Values") {
+                measureValue = cell.value;
+            } else
+            if (requiredSet.has(fieldName)) {
                 obj[fieldName] = cell.value;
             }
         });
+        if (measureName && measureValue !== null) {
+            obj[measureName] = measureValue;
+        }
+        if (Object.keys(obj).length > 0) {
+            if (next > 0 && !rows[next-1].hasOwnProperty(measureName) ) {
+                rows[next-1][measureName] = measureValue;
+            } else {
+                rows.push(obj);
+                next += 1
+            }
+        }
 
-        rows.push(obj);
-    }
+    });
 
-    await reader.closeAsync();
-
-    return { rows, partial };
+    return { rows };
 }

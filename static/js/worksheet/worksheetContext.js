@@ -34,10 +34,10 @@ function extractFilterValues(filter) {
     return null;
 }
 
-function checkFiltersLength(values, max_len = 20) {
+function checkFiltersLength(values, max_len = 50) {
     if (!Array.isArray(values)) return values;
     return values.length > max_len
-        ? ["More than 20 values"]
+        ? ["More than 50 values"]
         : values;
 }
 
@@ -80,4 +80,19 @@ export async function getWorksheetContext(worksheetName) {
         filters,
         chunkField
     };
+}
+
+// This is necessary to avoid cases when all measure values are selected and getFiltersAsync return []
+export async function measureNamesFilter(worksheetName) {
+    const worksheet = getWorksheet(worksheetName);
+    const filters = await getFilters(worksheet);
+    const measureFilter = filters.find(f => f.fieldName === "Measure Names");
+    if (measureFilter && Array.isArray(measureFilter.values)) {
+    // "Count of" is the prefix of the service field that counts rows number in the data source.
+        const valueToRemove = measureFilter.values.find(v => v.startsWith("Count of"));
+        if (valueToRemove) {
+            await worksheet.applyFilterAsync("Measure Names", [valueToRemove], tableau.FilterUpdateType.Remove);
+
+        }
+    }
 }
