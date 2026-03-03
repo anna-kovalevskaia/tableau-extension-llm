@@ -57,8 +57,8 @@ class ChatAI:
             raise ErrorLLM(f"OpenAI error: {e}")
 
 
-    def ask_gemini(self, message, model="gemini-3-flash-preview"):
-        full_prompt = message[0]["content"] + "\n\n" + message[1]["content"]
+    def ask_gemini(self, message, model="gemini-2.5-flash"):
+        full_prompt = "\n\n".join(msg['role']+'\t'+msg['content'] for msg in message)
         client = genai.Client(api_key=os.environ["GOOGLE_API_KEY"])
 
         try:

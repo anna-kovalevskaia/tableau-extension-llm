@@ -11,14 +11,19 @@ from dotenv import load_dotenv
 from starlette.responses import JSONResponse
 
 import backend.services.message_history as history
-from backend.services.chunk_manager import ChunkState
+from backend.services.chunk_manager import ChunkState, ChunkStorage
 from backend.services.pipeline_context import PipelineContext
 from backend.services.llm_adapter import ChatAI
-from backend.models import Payload, ChunkRequest, ChunkSavePayload
+
+from backend.models import Payload, ChunkRequest, ChunkSavePayload, RunAnalysis
+
 from backend.ops.frontend_payload_parse import parse_frontend_payload
-from backend.ops.llm_orchestrator import LLMPlanner
+from backend.ops.llm_orchestrator import LLMPlanner, LLMInterpreter
+from backend.ops.llm_run_code import execute_llm_code
+
 from backend.utilities.logging_config import setup_logging
-from backend.utilities.prompt import PLANNER
+from backend.utilities.prompt import PLANNER, INTERPRETER
+
 from backend.security.code_validation import validate_code
 
 
@@ -30,6 +35,8 @@ app = FastAPI(
     title="Tableau LLM Chat",
     description="Simple LLM chat interface for Tableau dashboard data"
 )
+temp_dir = os.environ['TEMP_FILES_DIR']
+os.makedirs(temp_dir, exist_ok=True)
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
@@ -71,11 +78,13 @@ def parse_structure(payload: Payload):
         # )
         # get_plan = llm_planner.get_llm_plan(pipeline_states.get_pipeline_state()["planner_input"])
         # history.add_message(user_id, "assistant", get_plan, message_dt_utc)
-        # parsed_llm_resp = llm_planner.parse_llm_plan(get_plan)
+
         with open('backend/tmp_test_llm_resp.txt', 'r', encoding="utf-8") as f:
             test_resp = f.read()
+        history.add_message(user_id, 'user', payload.question, message_dt_utc)
         history.add_message(user_id, 'assistant', test_resp, message_dt_utc)
         llm_planner = LLMPlanner()
+
         parsed_llm_resp = llm_planner.parse_llm_plan(test_resp)
         validate_code(parsed_llm_resp.code)
 
@@ -85,9 +94,20 @@ def parse_structure(payload: Payload):
             required_fields.append({
                 "measureNames": list(set(measure_names) & set(parsed_llm_resp.required_fields))
             })
+
         pipeline_states.save_pipeline_state('required_fields', required_fields)
         pipeline_states.save_pipeline_state('code', parsed_llm_resp.code)
-        return {"user_id": user_id}
+
+        str_date_tm = datetime.now().strftime("%Y%m%d_%H%M%S")
+        files_prefix = f"_temp_{user_id}_{str_date_tm}"
+
+        files_path = os.path.join(temp_dir, files_prefix)
+        os.makedirs(files_path, exist_ok=True)
+
+        pipeline_states.save_pipeline_state('files_path', files_path)
+        pipeline_states.save_pipeline_state('files_prefix', files_prefix)
+
+        return {"user_id": user_id }
     except Exception as e:
         logger.error(f"Something went wrong:\n{e}")
         raise HTTPException(status_code=500, detail={"detail": str(e)})
@@ -95,11 +115,12 @@ def parse_structure(payload: Payload):
 
 @app.post("/api/nextFilter")
 def send_data_request(payload: ChunkRequest):
+    user_id = payload.user_id
+    pipeline_states = PipelineContext(user_id).get_pipeline_state()
+    chunking_input = pipeline_states["chunking_input"]
+    required_fields = pipeline_states["required_fields"]
+    files_path = pipeline_states["files_path"]
     try:
-        user_id = payload.user_id
-        pipeline_states = PipelineContext(user_id)
-        chunking_input = pipeline_states.get_pipeline_state()["chunking_input"]
-        required_fields = pipeline_states.get_pipeline_state()["required_fields"]
         chunk_stat = ChunkState(user_id).update_state_by_chunk()
         request_dict = {
           "worksheetName": chunking_input["worksheetName"],
@@ -110,15 +131,52 @@ def send_data_request(payload: ChunkRequest):
         }
         return request_dict
     except Exception as e:
+        ChunkStorage(files_path).delete_tmp_files()
         logger.error(f"Something went wrong while sending next chunk structure:\n{e}")
         raise HTTPException(status_code=500, detail={"detail": str(e)})
 
+
 @app.post("/api/saveChunk")
 def save_chunk(payload: ChunkSavePayload):
+    user_id = payload.user_id
+    files_path = PipelineContext(payload.user_id).get_pipeline_state()["files_path"]
+    files_pref = PipelineContext(payload.user_id).get_pipeline_state()["files_prefix"]
     try:
         rows = payload.rows
-        chunk_stat = ChunkState(payload.user_id)
-        return chunk_stat.update_state_by_rows(len(rows), len(rows) == 0)
+        chunk_stat = ChunkState(user_id)
+        state_by_rows = chunk_stat.update_state_by_rows(len(rows))
+        chunk_storage = ChunkStorage(files_path, files_pref)
+        chunk_storage.save_tmp_files(rows, state_by_rows["chunk_cur_value"])
+        return state_by_rows
     except Exception as e:
+        ChunkStorage(files_path).delete_tmp_files()
         logger.error(f"Something went wrong while saving chunk data:\n{e}")
+        raise HTTPException(status_code=500, detail={"detail": str(e)})
+
+
+@app.post("/api/runAnalysis")
+def run_data_analysis(payload: RunAnalysis):
+    user_id = payload.user_id
+    pipeline_states = PipelineContext(user_id).get_pipeline_state()
+
+    files_path = pipeline_states["files_path"]
+    code = pipeline_states["code"]
+    interpreter_input = pipeline_states["interpreter_input"]
+    try:
+        result = execute_llm_code(files_path, code)
+        ChunkStorage(files_path).delete_tmp_files()
+
+        llm = ChatAI()
+        llm_inter = LLMInterpreter(
+          system_prompt_interpreter = INTERPRETER,
+          user_id = user_id,
+          llm = llm.ask_gemini,
+          history = history
+        )
+
+        final_answer = llm_inter.llm_interpretation(result, interpreter_input)
+        return final_answer
+    except Exception as e:
+        ChunkStorage(files_path).delete_tmp_files()
+        logger.error(f"Something went wrong while analysing data:\n{e}\n{code}")
         raise HTTPException(status_code=500, detail={"detail": str(e)})

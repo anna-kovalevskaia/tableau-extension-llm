@@ -11,8 +11,12 @@ def parse_frontend_payload(payload: Payload):
         chunk_field_context = [
             row for row in ws_schema if chunk_field_name and row["name"]==chunk_field_name
         ]
+
         chunk_field_type = chunk_field_context[0]["type"] if chunk_field_context else None
-        filters = [f.model_dump() for f in worksheet.filters if f.fieldName!="Measure Names"] if worksheet.filters else None
+        filters = [ # without server fields
+            f.model_dump() for f in worksheet.filters if f.fieldName!="Measure Names" and f.fieldName!=chunk_field_name
+        ] if worksheet.filters else None
+
         measure_filters = next(f.values for f in worksheet.filters if f.fieldName=="Measure Names") if worksheet.filters else None
 
         filtered_schema = [

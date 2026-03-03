@@ -60,4 +60,7 @@ export async function fetchData({
         chunkValues = next.chunkValues;
         lastChunk = next.done;
     }
+    if (measureNames.length > 0) {
+        await worksheet.clearFilterAsync("Measure Names");
+    }
 }

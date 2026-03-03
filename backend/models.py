@@ -32,3 +32,5 @@ class ChunkSavePayload(BaseModel):
     user_id: str
     rows: List[Dict[str, Any]]
 
+class RunAnalysis(BaseModel):
+    user_id: str

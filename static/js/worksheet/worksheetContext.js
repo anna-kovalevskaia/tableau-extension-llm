@@ -85,14 +85,13 @@ export async function getWorksheetContext(worksheetName) {
 // This is necessary to avoid cases when all measure values are selected and getFiltersAsync return []
 export async function measureNamesFilter(worksheetName) {
     const worksheet = getWorksheet(worksheetName);
-    const filters = await getFilters(worksheet);
-    const measureFilter = filters.find(f => f.fieldName === "Measure Names");
-    if (measureFilter && Array.isArray(measureFilter.values)) {
-    // "Count of" is the prefix of the service field that counts rows number in the data source.
-        const valueToRemove = measureFilter.values.find(v => v.startsWith("Count of"));
-        if (valueToRemove) {
-            await worksheet.applyFilterAsync("Measure Names", [valueToRemove], tableau.FilterUpdateType.Remove);
+//    const filters = await getFilters(worksheet);
+//    const measureFilter = filters.find(f => f.fieldName === "Measure Names");
+//    if (measureFilter && Array.isArray(measureFilter.values)) {
+//        const valueToRemove = measureFilter.values.find(v => v.startsWith("SERVICE_VALUE"));
+//        if (valueToRemove) {
+            await worksheet.applyFilterAsync("Measure Names", ["SERVICE_VALUE"], tableau.FilterUpdateType.Remove);
 
-        }
-    }
+//        }
+//    }
 }

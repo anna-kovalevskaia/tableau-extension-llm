@@ -54,7 +54,7 @@ export async function readChunkRows(worksheet, requiredFieldsName, measureNames,
             obj[measureName] = measureValue;
         }
         if (Object.keys(obj).length > 0) {
-            if (next > 0 && !rows[next-1].hasOwnProperty(measureName) ) {
+            if (next > 0 && !rows[next-1].hasOwnProperty(measureName) ) { //так работает. с Map() не работает.
                 rows[next-1][measureName] = measureValue;
             } else {
                 rows.push(obj);

@@ -58,7 +58,7 @@ class LLMInterpreter:
         self.history = history
         self.llm = llm
 
-    def llm_interpretation(self, execution_result):
+    def llm_interpretation(self, execution_result, used_filters):
 
         messages = [
             {"role": "system", "content": self.system_prompt_interpreter},
@@ -66,13 +66,11 @@ class LLMInterpreter:
             {
                 "role": "user",
                 "content": json.dumps({
-                    "result_for_execution": execution_result
+                    "result_for_execution": execution_result,
+                    "used_filters": used_filters
                 }, ensure_ascii=False)
             }
         ]
 
-        self.history.add_message(self.user_id, "user", "Explain the result")
-        raw_response = self.llm.ask(messages)
-        self.history.add_message(self.user_id, "assistant", raw_response)
-
+        raw_response = self.llm(messages)
         return raw_response

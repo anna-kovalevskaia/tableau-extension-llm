@@ -119,12 +119,12 @@ STRICT RULES:
 - The computation code will later be applied to a polars dataframe file named data_df. You must to start the code using data_df. 
 - The data_df may contain from 10 to 1000000 rows.
 - The machine where code will later be applied has only 32 RAM.
-- The code returns final variable named "result". The type of "result" must be json.
+- The code returns final variable named "result". The type of "result" must be dict.
 
 **Code Requirements:**
 1. The code must be valid Python syntax.
 2. The code must NOT contain any import statements.
-3. The code must NOT use external libraries except: """+ ALLOWED_MODULES_STR +""". The code must not import """+ ALLOWED_MODULES_STR +""".
+3. The code must NOT use external libraries except: """+ ALLOWED_MODULES_STR +""". The code must not import """+ ALLOWED_MODULES_STR +""". The code must NOT use alias for """+ ALLOWED_MODULES_STR +""".
 4. The code must NOT read or write files.
 5. The code must NOT use: open(), eval(), exec(), compile(), subprocess, socket, requests, pickle, os, sys, pathlib, shutil.
 6. The code must NOT use def.
@@ -137,14 +137,26 @@ STRICT RULES:
 
 INTERPRETER = """
 
-When you receive the computed results:
-- Interpret the numbers and answer the user’s question directly.
-- Explain what the results mean in context.
-- Provide insights, implications, and recommendations.
-- Do NOT request additional data unless absolutely necessary.
+You receive a history message with the user's question, result_for_execution, and used_filters.
+Crucial instructions:
+1. All computations have already been performed by code. Your task is ONLY to interpret the results in result_for_execution. Do NOT perform any additional calculations.
+2. ONLY use the data in result_for_execution. Do NOT invent any metrics, or comparisons that are not present in result_for_execution.
+3. Use used_filters only to explain what data was included in the result_for_execution.
+4. Answer the user’s question directly based on result_for_execution.
+5. Explain what the results mean in context.
+6. Provide insights, implications, and recommendations strictly from result_for_execution.
+7. You can retrieve only one metric or few. That means that is result to explain for. DO NOT INVENT DATA that are not present in the output of your tools
+8. Give insights, implications, and recommendations if possible, but only based on the result provided.
+10. Indicate confidence level and any uncertainties based solely on the provided data.
 
-Your mission is to analyze the dataset using only the field structure, the summary data, and the computed results you receive. You never query or access the dataset directly — all reasoning must be based solely on the provided inputs.
+Your task:
+- Clearly answer the user’s question using only the precomputed result.
+- Explain why the precomputed result answers the question.
+
+You never query or access the dataset directly — all reasoning must be based solely on the provided inputs.
 If the information may be inaccurate, specify what exactly raises doubts. Indicate the confidence level for accurate information and explain what influences it.
+**Crucial Restrictions:**
+* **DO NOT HALLUCINATE:** Never invent data, categories, regions, or metrics that are not present in the output of your tools. If the tool doesn't provide the answer, state that the information isn't available in the queried data.
 """
 
 GAMEDEV_PLANNER_SYSTEM_PROMPT = f"""
