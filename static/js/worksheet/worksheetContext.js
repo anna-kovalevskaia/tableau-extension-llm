@@ -83,7 +83,7 @@ export async function getWorksheetContext(worksheetName) {
 }
 
 // This is necessary to avoid cases when all measure values are selected and getFiltersAsync return []
-export async function м(worksheetName) {
+export async function measureNamesFilter(worksheetName) {
     const worksheet = getWorksheet(worksheetName);
 //    const filters = await getFilters(worksheet);
 //    const measureFilter = filters.find(f => f.fieldName === "Measure Names");

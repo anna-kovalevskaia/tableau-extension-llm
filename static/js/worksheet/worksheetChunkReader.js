@@ -22,47 +22,50 @@ export async function applyChunkFilter(worksheet, chunkField, chunkValues) {
         tableau.FilterUpdateType.Replace
     );
 }
-//read worksheet rows using Summary Data Reader respecting limit
+// read worksheet rows using Summary Data Reader respecting limit
 export async function readChunkRows(worksheet, requiredFieldsName, measureNames, limit) {
     const table = await worksheet.getSummaryDataAsync({
         ignoreSelection: true,
-        maxRows:limit
+        maxRows: limit
     });
 
     const requiredSet = new Set(requiredFieldsName);
-    const rows = [] ;
-    let next = 0;
+    const rowMap = new Map(); // key -> aggregated row
 
     table.data.forEach(row => {
-        const obj = {};
+        const dimsObj = {};
+        const keyParts = [];
+
         let measureName = null;
         let measureValue = null;
 
-        row.forEach((cell,i) => {
+        row.forEach((cell, i) => {
             const fieldName = table.columns[i].fieldName;
             if (fieldName === "Measure Names") {
                 measureName = cell.formattedValue;
             } else
-            if (fieldName === "Measure Values") {
+             if (fieldName === "Measure Values") {
                 measureValue = cell.value;
-            } else
-            if (requiredSet.has(fieldName)) {
-                obj[fieldName] = cell.value;
+            } else {
+                // Warning: use ALL NOT-measure fields as key
+                const value = cell.value;
+                dimsObj[fieldName] = value;
+                keyParts.push(`${fieldName}:${value}`);
             }
         });
-        if (measureName && measureValue !== null) {
-            obj[measureName] = measureValue;
-        }
-        if (Object.keys(obj).length > 0) {
-            if (next > 0 && !rows[next-1].hasOwnProperty(measureName) ) { //так работает. с Map() не работает.
-                rows[next-1][measureName] = measureValue;
-            } else {
-                rows.push(obj);
-                next += 1
-            }
+
+        if (!measureName || measureValue === null) return;
+
+        const key = keyParts.join("|");
+
+        let obj = rowMap.get(key);
+        if (!obj) {
+            obj = { ...dimsObj };
+            rowMap.set(key, obj);
         }
 
+        obj[measureName] = measureValue;
     });
 
-    return { rows };
+    return { rows: Array.from(rowMap.values()) };
 }
