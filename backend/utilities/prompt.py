@@ -105,9 +105,9 @@ PLANNER = """
 
 STRICT RULES:
 - Return ONLY valid JSON.
-- Do NOT wrap the JSON in code fences.
+- Do NOT wrap the JSON in code FENCES.
 - No explanations, no comments, no markdown.
-- Do NOT add explanations, comments, or text outside the JSON.
+- Do NOT add explanations, comments, backtick character (`)  or text outside the JSON.
 - Do NOT perform any calculations.
 - Do NOT interpret results.
 - Only produce a computation plan.

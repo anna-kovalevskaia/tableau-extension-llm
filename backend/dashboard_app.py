@@ -69,23 +69,18 @@ def parse_structure(payload: Payload):
         pipeline_states = PipelineContext(user_id)
         for state_type in ("planner_input", "chunking_input", "interpreter_input", "service_fields"):
             pipeline_states.save_pipeline_state(state_type, parsed_payload[state_type])
-        # llm = ChatAI()
-        # llm_planner = LLMPlanner(
-        #   system_prompt_planner = PLANNER,
-        #   user_id = user_id,
-        #   llm = llm.ask_gemini,
-        #   history = history
-        # )
-        # get_plan = llm_planner.get_llm_plan(pipeline_states.get_pipeline_state()["planner_input"])
-        # history.add_message(user_id, "assistant", get_plan, message_dt_utc)
-
-        with open('backend/tmp_test_llm_resp.txt', 'r', encoding="utf-8") as f:
-            test_resp = f.read()
+        llm = ChatAI()
+        llm_planner = LLMPlanner(
+          system_prompt_planner = PLANNER,
+          user_id = user_id,
+          llm = llm.ask_gemini,
+          history = history
+        )
+        get_plan = llm_planner.get_llm_plan(pipeline_states.get_pipeline_state()["planner_input"])
         history.add_message(user_id, 'user', payload.question, message_dt_utc)
-        history.add_message(user_id, 'assistant', test_resp, message_dt_utc)
-        llm_planner = LLMPlanner()
+        history.add_message(user_id, "assistant", get_plan, message_dt_utc)
 
-        parsed_llm_resp = llm_planner.parse_llm_plan(test_resp)
+        parsed_llm_resp = llm_planner.parse_llm_plan(get_plan)
         validate_code(parsed_llm_resp.code)
 
         measure_names = pipeline_states.get_pipeline_state()["service_fields"]["Measure Names"]

@@ -88,4 +88,4 @@ class ChunkStorage:
         try:
             shutil.rmtree(files_path)
         except Exception as e:
-            ChunkStorageError(f"ChunkStorage failed. no such directory {e}\t{files_path}")
+            raise ChunkStorageError(f"ChunkStorage failed. no such directory {e}\t{files_path}")

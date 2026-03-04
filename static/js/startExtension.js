@@ -26,9 +26,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     input.focus();
 
-    input.addEventListener("keydown", (event) =>
+    input.addEventListener("keydown", (event) => {
+        if (btn.disabled) return;
         handleEnter(event, handleAsk)
-    );
+    });
 
     btn.addEventListener("click", handleAsk)
   });
