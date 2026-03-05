@@ -154,6 +154,7 @@ It runs entirely locally, does not send any data to the internet, and does not r
 The project **is not** positioned as a **commercial Tableau product** and does not include enterprise guarantees, so teams that choose to use it in production should independently assess whether it meets their requirements and security policies.
 
 
+
 ## Optional: Exporting Redis‑stored history for analytics
 
 Since Redis is already used to temporarily store the conversation history (user ↔ assistant messages), LLM‑generated code, and internal execution states, it is possible to configure an additional process that periodically exports this data into a persistent storage system (for example, a database or a data lake).
@@ -166,9 +167,9 @@ The extension itself does not perform this export, but the Redis data model is i
 
 
 
-## License
+### License
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 
-### The project was inspired by [tableau_mcp_starter_kit](https://github.com/TheInformationLab/tableau_mcp_starter_kit)
-
+### Related projects
+-[tableau_mcp_starter_kit](https://github.com/TheInformationLab/tableau_mcp_starter_kit) - an alternative approach to using LLMs with Tableau based on the MCP server.
