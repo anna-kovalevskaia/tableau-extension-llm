@@ -104,7 +104,7 @@ redis-cli ping
 ```
 If it returns ```PONG```, Redis is active.
 
-### 5. Running dashboard_app.py
+### 6. Running dashboard_app.py
 ```bash
 uvicorn backend.dashboard_app:app --reload --port 8888
 ```
@@ -113,6 +113,7 @@ It will be accessible at this address
 ```bash
 http://localhost:8888
 ```
+
 ## Instruction on the Tableau side
 ### ⚠️ 1. Preparing the data
 
