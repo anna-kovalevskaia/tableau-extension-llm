@@ -12,7 +12,7 @@ import numpy
 import scipy
 import polars
 
-# import resource # doesnt work for windows
+import resource # doesnt work for windows
 import signal
 
 
@@ -23,15 +23,15 @@ class SaveExecution:
         self.MAX_EXECUTION_SECONDS = MAX_EXECUTION_SECONDS
         self._orig = {}
 
-    # def limit_resources(self): # doesnt work for windows
-    #     resource.setrlimit(resource.RLIMIT_AS, (self.MAX_MEMORY_MB * 1024 * 1024,
-    #                                             self.MAX_EXECUTION_SECONDS * 1024 * 1024))
-    #
-    #     def timeout_handler(signum, frame):
-    #         raise TimeoutError("Execution time exceeded")
-    #
-    #     signal.signal(signal.SIGXCPU, timeout_handler)
-    #     resource.setrlimit(resource.RLIMIT_CPU, (self.MAX_EXECUTION_SECONDS, self.MAX_MEMORY_MB))
+    def limit_resources(self): # doesnt work for windows
+        resource.setrlimit(resource.RLIMIT_AS, (self.MAX_MEMORY_MB * 1024 * 1024,
+                                                self.MAX_EXECUTION_SECONDS * 1024 * 1024))
+
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Execution time exceeded")
+
+        signal.signal(signal.SIGXCPU, timeout_handler)
+        resource.setrlimit(resource.RLIMIT_CPU, (self.MAX_EXECUTION_SECONDS, self.MAX_MEMORY_MB))
     def _save_originals(self):
         import pandas, numpy, polars
 

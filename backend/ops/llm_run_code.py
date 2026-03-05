@@ -13,7 +13,7 @@ def execute_llm_code(files_path, code, extra_globals=None):
     sandbox_locals = {}
 
     try:
-        # save_execut.limit_resources() # doesnt work for windows
+        save_execut.limit_resources() # doesnt work for windows
         exec(code, sandbox_globals, sandbox_locals)
     except Exception as e:
         raise RuntimeError(f"Error during code execution: {e}") from e

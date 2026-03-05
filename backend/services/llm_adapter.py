@@ -21,7 +21,7 @@ class ChatAI:
         if self._client is None:
             self._client = OpenAI(
                 base_url=os.environ['BASE_URL'],
-                api_key=os.environ['OPENROUTER_API_KEY'],
+                api_key=os.environ['OPENAI_API_KEY'],
                 timeout=60,
                 max_retries=0
             )
