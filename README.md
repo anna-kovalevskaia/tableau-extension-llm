@@ -2,11 +2,10 @@
 
 A local Tableau Extension that lets you ask natural‑language questions and receive analytical answers based on the data from the selected worksheet. It runs entirely on your machine, does not require Tableau Server or Tableau Cloud.
 
-## Features
-- Fully local operation — your data never leaves your machine.
+## Feature
 - Can run entirely locally in Tableau Desktop or inside Tableau Server/Cloud.
-- Does not require elevated permissions — works as a standard Dashboard Extension.
-- The LLM never sees raw data — only the results of executed code.
+- Does not require elevated permissions, service user. Works as a standard Dashboard Extension.
+- The LLM never sees raw data.
 - Automatically detects which fields are required for analysis
 
 
@@ -31,8 +30,8 @@ This is **not a production‑grade** solution but an **open‑source tool**.
 - Git
 
 **LLM configuration**
-- API keys for the chosen remote LLM provider (OpenRouter, Gemini, OpenAI, etc.) — required only if you use a cloud‑based model
-- Ollama installed locally — optional, used when running an entirely local LLM without any API keys
+- API keys for the chosen remote LLM provider (OpenRouter, Gemini, OpenAI, etc.) required only if you use a cloud‑based model
+- Ollama installed locally - optional, used when running an entirely local LLM without any API keys
 
 
 ## Installation (backend)
@@ -135,7 +134,7 @@ ChunkID = int(row_number%100)+1
   Requirements:
   - starts at 1
   - increments by 1
-  - 3,000–10,000 rows per value.  This improves data‑loading performance.
+  - 3,000-10,000 rows per value.  This improves data‑loading performance.
 
 
 ### 2. Configuring the extension in Tableau
