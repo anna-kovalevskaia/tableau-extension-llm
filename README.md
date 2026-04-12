@@ -1,7 +1,7 @@
 # Tableau LLM Assistant 
 
 A local Tableau Extension that lets you ask natural‑language questions and receive analytical answers based on the data from the selected worksheet. It runs entirely on your machine, does not require Tableau Server or Tableau Cloud.
-
+**[Video installation guide](https://www.youtube.com/watch?v=slbN9J2fC3w)**
 ## Feature
 - Can run entirely locally in Tableau Desktop or inside Tableau Server/Cloud.
 - Does not require elevated permissions, service user. Works as a standard Dashboard Extension.
