@@ -22,7 +22,7 @@ from backend.ops.llm_orchestrator import LLMPlanner, LLMInterpreter
 from backend.ops.llm_run_code import execute_llm_code
 
 from backend.utilities.logging_config import setup_logging
-from backend.utilities.prompt import PLANNER, INTERPRETER
+from backend.utilities.prompt import PLANNER_STEP1, PLANNER_STEP2,INTERPRETER
 
 from backend.security.code_validation import validate_code
 
@@ -67,20 +67,39 @@ def parse_structure(payload: Payload):
     try:
         parsed_payload = parse_frontend_payload(payload)
         pipeline_states = PipelineContext(user_id)
+
         for state_type in ("planner_input", "chunking_input", "interpreter_input", "service_fields"):
             pipeline_states.save_pipeline_state(state_type, parsed_payload[state_type])
+
         llm = ChatAI()
         llm_planner = LLMPlanner(
-          system_prompt_planner = PLANNER,
+          system_prompt_planner = PLANNER_STEP1,
           user_id = user_id,
-          llm = llm.ask_gemini,
+          llm = llm.ask_ollama,
           history = history
         )
-        get_plan = llm_planner.get_llm_plan(pipeline_states.get_pipeline_state()["planner_input"])
-        history.add_message(user_id, 'user', payload.question, message_dt_utc)
-        history.add_message(user_id, "assistant", get_plan, message_dt_utc)
+        planner_input = pipeline_states.get_pipeline_state()["planner_input"]
+        get_plan_step1 = llm_planner.get_llm_plan(planner_input)
 
-        parsed_llm_resp = llm_planner.parse_llm_plan(get_plan)
+        llm_planner = LLMPlanner(
+          system_prompt_planner = PLANNER_STEP2,
+          user_id = user_id,
+          llm = llm.ask_openai,
+          history = history
+        )
+        get_plan_step2 = llm_planner.get_llm_plan(payload.question+'\n'+get_plan_step1)
+        parsed_llm_resp = llm_planner.parse_llm_plan(get_plan_step2)
+
+        history.add_message(user_id, 'user', payload.question, message_dt_utc)
+        history.add_message(user_id, "assistant", get_plan_step2, message_dt_utc)
+
+        required_fields_with_types = {
+            required_field: sh["type"]
+            for required_field in parsed_llm_resp.required_fields
+            for sh in planner_input["schema"]
+            if sh["name"] == required_field
+        }
+        pipeline_states.save_pipeline_state("required_fields_with_types", required_fields_with_types)
         validate_code(parsed_llm_resp.code)
 
         measure_names = pipeline_states.get_pipeline_state()["service_fields"]["Measure Names"]
@@ -158,15 +177,15 @@ def run_data_analysis(payload: RunAnalysis):
     code = pipeline_states["code"]
     interpreter_input = pipeline_states["interpreter_input"]
     try:
-        result = execute_llm_code(files_path, code)
+        result = execute_llm_code(user_id, files_path, code)
         ChunkStorage(files_path).delete_tmp_files()
 
         llm = ChatAI()
         llm_inter = LLMInterpreter(
           system_prompt_interpreter = INTERPRETER,
           user_id = user_id,
-          llm = llm.ask_gemini,
-          history = history
+          llm = llm.ask_openai,
+          history=history
         )
 
         final_answer = llm_inter.llm_interpretation(result, interpreter_input)
