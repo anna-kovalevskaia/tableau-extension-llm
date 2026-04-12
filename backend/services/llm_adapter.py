@@ -21,13 +21,13 @@ class ChatAI:
         if self._client is None:
             self._client = OpenAI(
                 base_url=os.environ['BASE_URL'],
-                api_key=os.environ['OPENAI_API_KEY'],
+                api_key=os.environ['GOOGLE_API_KEY'],
                 timeout=60,
                 max_retries=0
             )
         return self._client
 
-    def ask_ollama(self, message, model="llama3:70b"):
+    def ask_ollama(self, message, model="qwen3-coder:480b-cloud"):
 
         try:
             response = ollama.chat(
@@ -47,8 +47,7 @@ class ChatAI:
             response = self.openai_client.chat.completions.create(
                 model=model,
                 messages=message,
-                temperature=self.temperature,
-                max_tokens = 8000
+                temperature=self.temperature
             )
 
             return response.choices[0].message.content
