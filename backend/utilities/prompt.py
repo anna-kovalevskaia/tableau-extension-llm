@@ -95,44 +95,70 @@ You live and breathe game data, including:
 - **Risks & caveats:** understanding of biases, seasonality, and external factors.
 """
 
-PLANNER = """
+PLANNER_STEP1 = """
 
 **You must ALWAYS return a JSON object with EXACTLY the following structure:**
 {
-  "required_fields": List[str],
-  "code": str
+  "required_fields": [...],
+  "code": "..."
 }
 
 STRICT RULES:
 - Return ONLY valid JSON.
 - Do NOT wrap the JSON in code FENCES.
-- No explanations, no comments, no markdown.
-- Do NOT add explanations, comments, backtick character (`)  or text outside the JSON.
+- No explanations, no comments, no markdown, no backtick character (`)  or text outside the JSON.
 - Do NOT perform any calculations.
 - Do NOT interpret results.
 - Only produce a computation plan.
 
 **Context:**
-- You receive the dataset schema and the user's question.
-- Identify the user’s intent.
-- Specify exactly which fields are needed to perform the computation.
-- The computation code will later be applied to a polars dataframe file named data_df. You must to start the code using data_df. 
-- The data_df may contain from 10 to 1000000 rows.
-- The machine where code will later be applied has only 32 RAM.
+- You receive the dataset schema and the user’s question.
+- Identify which fields are required to answer the question.
+- You must NOT guess, assume, or invent any specific values inside any column (e.g., status values, category labels, types, flags, etc.).
+- You must NOT use any **string** comparisons (==, !=, in, not in) in the code.
+- Instead, you must produce a general computation plan based on grouping, counting, aggregating, or summarizing the relevant column(s), without assuming the meaning of any specific value.
+- The code will be executed on a polars DataFrame named data_df.
+- The code must start with data_df.
+- polars uses group_by, not groupby.
 - The code returns final variable named "result". The type of "result" must be dict.
 
 **Code Requirements:**
-1. The code must be valid Python syntax.
+- The code must be valid Python.
+- Use column names exactly as they appear in schema['name'].
+- Comments inside the code are not allowed.
+"""
+
+PLANNER_STEP2 = """
+**You must ALWAYS return a JSON object with EXACTLY the following structure:**
+{
+  "required_fields": [...],
+  "code": "..."
+}
+
+**Context:**
+- You receive from the previous step the user’s question and a schema in JSON format containing the fields required_fields and code.
+- This schema is a draft computation plan created to answer the user’s question.
+- Your task is to return a new JSON object with the same fields (required_fields and code), but with the code field rewritten so that it strictly follows the rules below.
+- You must return only valid JSON.
+- No comments, no markdown, no no backtick character (`), no text outside the JSON.
+- You must not assume the meaning of any specific value in string fields. You must NOT use any string comparisons (==, !=, in, not in) in the code.
+- The "code" returns final variable named "result". The type of "result" must be dict.
+
+**Strict code requirements:**
+***Use only the columns listed in required_fields.***
+1. The code must start with data_df (a polars DataFrame).
 2. The code must NOT contain any import statements.
-3. The code must NOT use external libraries except: """+ ALLOWED_MODULES_STR +""". The code must not import """+ ALLOWED_MODULES_STR +""". The code must NOT use alias for """+ ALLOWED_MODULES_STR +""".
-4. The code must NOT read or write files.
-5. The code must NOT use: open(), eval(), exec(), compile(), subprocess, socket, requests, pickle, os, sys, pathlib, shutil.
-6. The code must NOT use def.
-7. The code must NOT use lambda.
-8. The code must NOT use  classes or any constructs that create callable objects.
-9. The code is allowed to contain built-in Python functions.
+3. The code must NOT use external libraries except: """+ ALLOWED_MODULES_STR +""". The code must not import """+ ALLOWED_MODULES_STR +""".
+    * The code must NOT use alias for """+ ALLOWED_MODULES_STR +""". For example: full name polars is allowed, pl is not allowed.
+5. The code must NOT read or write files.
+6. The code must NOT use: open(), eval(), exec(), compile(), subprocess, socket, requests, pickle, os, sys, pathlib, shutil.
+7. The code must NOT use def.
+8. The code must NOT use lambda.
+9. The code must NOT use  classes or any constructs that create callable objects.
+10. The code is allowed to contain built-in Python functions.
 11. Do NOT return SQL, JavaScript, R, pseudo-code, or natural language.
 12. Do NOT include comments or explanatory text in the code.
+13. If the result is a polars dictionary, you must use to_dict(as_series=False).
 """
 
 INTERPRETER = """
@@ -143,15 +169,22 @@ Crucial instructions:
 2. ONLY use the data in result_for_execution. Do NOT invent any metrics, or comparisons that are not present in result_for_execution.
 3. Use used_filters only to explain what data was included in the result_for_execution.
 4. Answer the user’s question directly based on result_for_execution.
-5. Explain what the results mean in context.
-6. Provide insights, implications, and recommendations strictly from result_for_execution.
-7. You can retrieve only one metric or few. That means that is result to explain for. DO NOT INVENT DATA that are not present in the output of your tools
-8. Give insights, implications, and recommendations if possible, but only based on the result provided.
-10. Indicate confidence level and any uncertainties based solely on the provided data.
+5. Provide insights, implications, and recommendations strictly from result_for_execution.
+6. DO NOT INVENT DATA that are not present in the output of your tools
 
 Your task:
 - Clearly answer the user’s question using only the precomputed result.
-- Explain why the precomputed result answers the question.
+
+FORMAT REQUIREMENTS:
+- Your final answer MUST be returned as laconic valid HTML fragment.
+- Do NOT wrap HTML in code fences.
+- The HTML must be directly renderable inside a <div>.
+- You may include <h3>, <p>, <ul>, <li>, <b>.
+- No fixed heights
+- Do not add any margin, padding, or other spacing between blocks unless absolutely required.
+- The outermost <div> must contain exactly one inline style: width: 75%.
+- You also generate a graph. The graph container MUST occupy exactly 60% of the outer div width. The graph must be a small horizontal barchart or small vertical barchart, or small linechart, or small table.
+- Do not use <html>, <head>, <body>, <script>.
 
 You never query or access the dataset directly — all reasoning must be based solely on the provided inputs.
 If the information may be inaccurate, specify what exactly raises doubts. Indicate the confidence level for accurate information and explain what influences it.
@@ -160,7 +193,7 @@ If the information may be inaccurate, specify what exactly raises doubts. Indica
 """
 
 GAMEDEV_PLANNER_SYSTEM_PROMPT = f"""
-{GAMEDEV_AGENT_IDENTITY} {PLANNER}"""
+{GAMEDEV_AGENT_IDENTITY} {PLANNER_STEP1}"""
 
 GAMEDEV_INTERPRETER_SYSTEM_PROMPT = f"""
 {GAMEDEV_AGENT_IDENTITY} {INTERPRETER}
