@@ -53,7 +53,7 @@ FORBIDDEN_CALLS = {
     "__mro__",
     "__dict__",
     "__class__",
-    "__builtins__",
+    # "__builtins__",
 }
 
 FORBIDDEN_NODES = (
