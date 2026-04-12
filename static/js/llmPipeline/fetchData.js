@@ -60,6 +60,11 @@ export async function fetchData({
         chunkValues = next.chunkValues;
         lastChunk = next.done;
     }
+    await worksheet.applyFilterAsync(
+        chunkField,
+        [1],
+        tableau.FilterUpdateType.Replace
+    );
     if (measureNames.length > 0) {
         await worksheet.clearFilterAsync("Measure Names");
     }
