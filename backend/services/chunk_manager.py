@@ -85,6 +85,8 @@ class ChunkStorage:
 
     def delete_tmp_files(self):
         files_path = self.files_path
+        if not os.path.exists(files_path):
+            return
         try:
             shutil.rmtree(files_path)
         except Exception as e:

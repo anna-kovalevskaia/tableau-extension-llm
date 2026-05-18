@@ -53,13 +53,7 @@ document.addEventListener("DOMContentLoaded", () => {
        // step 3 llm response
        btn.textContent = "Analysing data...";
        const finalResult = await getFinalAnswer(user_id);
-       const formattedResult = finalResult
-          .replace(/\\n/g, '\n')
-          .replace(/\\t/g, '\t')
-          .replace(/\\r/g, '\r')
-          .replace(/\\"/g, '"')
-          .replace(/\\\\/g, '\\');
-       addMessage(formattedResult, "bot");
+       addMessage(finalResult, "bot");
     } catch (error) {
         console.error(error);
         addMessage(JSON.stringify(error, Object.getOwnPropertyNames(error)), "bot");

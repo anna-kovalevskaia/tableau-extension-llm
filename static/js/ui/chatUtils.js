@@ -2,10 +2,9 @@ export function addMessage(text, type) {
     const chatBox = document.getElementById('chatBox');
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${type}`;
-    messageDiv.innerHTML = text.replace(/\n/g, '<br>');
+    messageDiv.innerHTML = text;
     chatBox.appendChild(messageDiv);
 
-    // Scroll to bottom
     chatBox.scrollTop = chatBox.scrollHeight;
 }
 
