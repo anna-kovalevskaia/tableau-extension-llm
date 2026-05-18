@@ -123,7 +123,7 @@ when all Measure Names are selected, the API returns an empty filter
 Create a calculated field:
 
 ```
-SERVICE_FIELD = 0
+SERVICE_VALUE = 0
 ```
 ✔️ (Optional) Create a dimension field for chunking
 If your worksheet is large (100k+ rows), create an INT field, or select from your datasource.
